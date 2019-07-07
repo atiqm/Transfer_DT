@@ -5,11 +5,12 @@
 
 import numpy as np
 from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 import copy
 
 
 def add_to_parents(dTree, node, values):
-    # dic = dTree.tree_.__getstate__().copy()
     p, b = find_parent(dTree.tree_, node)
     if b != 0:
         dTree.tree_.value[p] = dTree.tree_.value[p] + values
@@ -129,15 +130,11 @@ def threshold_selection(Q_source_parent,
                         classes,
                         use_divergence=True,
                         measure_default_IG=True):
-    # print("Q_source_parent : ", Q_source_parent)
-    # sort the corrdinates of X along phi
-    #X_phi_sorted = np.sort(X_target_node[:, phi])
     
-    #modif pour ne considérer que les valeurs distinctes
+    #Ne considérer que les valeurs distinctes
     X_phi_sorted = np.array(list(set(X_target_node[:, phi])))
     X_phi_sorted = np.sort(X_phi_sorted)
-    
-    # print(X_phi_sorted)
+
     nb_tested_thresholds = X_phi_sorted.shape[0] - 1
     
     if nb_tested_thresholds == 0:
@@ -174,13 +171,11 @@ def threshold_selection(Q_source_parent,
                 index = np.argmax(measures_IG)
             else:
                 index = np.argmax(measures_DG)
-    #print('div index',index)
+
     else:    
         index = np.argmax(measures_IG)
     
-    
-    #print('no div index',np.argmax(measures_IG))
-    #print('------')
+
     threshold = (X_phi_sorted[index] + X_phi_sorted[index + 1]) * 1. / 2
     return threshold
 
@@ -245,30 +240,14 @@ def STRUT(decisiontree,
     current_class_distribution_noupdate = compute_class_distribution(
         classes, Y_target_node_noupdate)
 
-    # print("\nNODE ", node_index)
-    # print("parents : ", find_parent(tree, node_index))
-    # print("prune_lone_instance ", prune_lone_instance)
-    # print("value of source at node_index : ", tree.value[node_index, :,
-    # :].astype(int))
+
     tree.weighted_n_node_samples[node_index] = Y_target_node.size
     tree.impurity[node_index] = GINI(current_class_distribution)
     tree.n_node_samples[node_index] = Y_target_node.size
-    # print("feat ", phi)
-    # print("threshold ", threshold)
-    # print("target_sahpe : ", X_target_node.shape)
-    # print("val des target pour la feat : ", X_target_node[:, phi])
-    # print("maj class before update values", np.argmax(tree.value[node_index]))
-    # print("classes ", classes)
-    # print("current_class_distribution_source ",
-          # current_class_distribution_source)
-    # print("current_class_distribution ", current_class_distribution)
-    # print("current_class_distribution_noupdate ",
-          # current_class_distribution_noupdate)
+
 
     # If it is a leaf one, exit
     if tree.children_left[node_index] == -1 and tree.children_right[node_index] == -1:
-        # print("it's a leaf")
-        # update tree.value
         tree.value[node_index] = current_class_distribution
         return 0
 
@@ -277,14 +256,10 @@ def STRUT(decisiontree,
 
     is_instance_cl_no_prune = np.sum(tree.value[node_index, :,
                                                 cl_no_prune].astype(int))
-#     print("is_reached_update : ", is_reached_update)
-#     print("is_reached_noupdate : ", is_reached_noupdate)
 
     # NEW prune_cond
     add_source_value = False
-    # print("is_reached_update : ", is_reached_update)
-    # print("is_reached_noupdate : ", is_reached_noupdate)
-    # print("is_instance_cl_no_prune : ", is_instance_cl_no_prune)
+
     if pruning_updated_node:
         if no_prune_on_cl:
             # flag meaning need to add source value (to avoid zero !)
@@ -300,7 +275,7 @@ def STRUT(decisiontree,
         else:
             prune_cond = not is_reached_noupdate or not is_reached_update
 
-    # OLD prune_cond
+
     # prune_cond = not is_reached_update or (not pruning_updated_node and (not is_reached_noupdate) and ((not no_prune_on_cl) or (not is_instance_cl_no_prune)))
     # if no target data at all or ((not reached) and (pruning activated or no
     # instance to preserve)), then prune
@@ -351,18 +326,7 @@ def STRUT(decisiontree,
 
         
         return 0
-    # Only one instance -> pruning into leaf
-    # if current_class_distribution.sum() == 1:
-        # # print("Only one instance in node {} --> PRUNING ? ".format(node_index))
-        # if prune_lone_instance:
-        # # print("YES")
-        # prune_subtree(decisiontree,
-        # node_index)
-        # tree.feature[node_index] = -2
-        # # else:
-        # # if is_instance_cl_no_prune:
-        # # print("NO")
-        # return 0
+
 
     # update threshold
     if type(threshold) is np.float64:
@@ -377,39 +341,23 @@ def STRUT(decisiontree,
             Q_source_l = np.multiply(coeffs, Q_source_l)
             Q_source_r = np.multiply(coeffs, Q_source_r)
             
-#        if adapt_prop_hetero:
-#            Q_source_l = np.multiply(coeffs, Q_source_l)
-#            D = np.sum(Q_source_l)
-#            Q_source_l = np.divide(Q_source_l,D)
-#            Q_source_r = np.multiply(coeffs, Q_source_r)
-#            D = np.sum(Q_source_r)
-#            Q_source_r = np.divide(Q_source_r,D)  
-            
+
         if adapt_prop:
             Sl = np.sum(Q_source_l)
             Sr = np.sum(Q_source_r)
             Slt = Y_target_node.size
             Srt = Y_target_node.size
-
-            #Q_source_l = Q_source_l/np.sum(Q_source_l) 
-            #Q_source_r = Q_source_r/np.sum(Q_source_r) 
-            
-            #Q_source_l = np.multiply(coeffs, Q_source_l)
             
             D = np.sum(np.multiply(coeffs, Q_source_l))
             Q_source_l = (Slt/Sl)*np.multiply(coeffs,np.divide(Q_source_l,D))
             D = np.sum(np.multiply(coeffs, Q_source_r))
             Q_source_r = (Srt/Sr)*np.multiply(coeffs,np.divide(Q_source_r,D))            
-            
-            #Q_source_r = np.multiply(coeffs, Q_source_r)
-            #D = np.sum(Q_source_r)
-            #Q_source_r = Sr*np.divide(Q_source_r,D)    
+   
             
         Q_source_parent = get_node_distribution(decisiontree,
                                                 node_index)
 
-        # print("threshold selection : X_target_node shape : ",
-        # X_target_node.shape)
+
         t1 = threshold_selection(Q_source_parent,
                                  Q_source_l.copy(),
                                  Q_source_r.copy(),
@@ -537,10 +485,7 @@ def STRUT_RF(random_forest,
                 props_t[k] = np.sum(y_target == k) / y_target.size
                 
             coeffs = np.divide(props_t, props_s)
-                
 
-
-            #print("tree : ", i)
             STRUT(rf_strut.estimators_[i],
                   0,
                   X_target,
@@ -573,66 +518,142 @@ def STRUT_RF(random_forest,
     return rf_strut
 
 if __name__ == "__main__":
-    import graphviz
-    import matplotlib.pyplot as plt
-    # Build a dataset
-    dataset_length = 100
-    D = 2
-    X = np.random.randn(dataset_length, D) * 0.1
-    X[0:dataset_length // 2, 0] += 0.1
-    X[0:dataset_length // 2, 0] += 0.2
-    Y = np.ones(dataset_length)
-    Y[0:dataset_length // 2] *= 0
-    # Train a Tree
-    clf = tree.DecisionTreeClassifier()
-    clf = clf.fit(X, Y)
+    print('TEST :')
+    import sys
+    from sklearn.model_selection import train_test_split
+    
+    def load_I():
+        from sklearn.datasets import load_iris
+        iris = load_iris()
+        
+        inds = np.where(iris.data[:,3] > np.median(iris.data[:,3]))[0]
+        indt = np.where(iris.data[:,3] <= np.median(iris.data[:,3]))[0]
+        
+        X_source = iris.data[np.concatenate((inds,indt[:5]))]
+        y_source = iris.target[np.concatenate((inds,indt[:5]))]
+    
+    
+        X_target_005 = iris.data[np.concatenate((inds[-10:],indt[:5]))][::2]
+        y_target_005 = iris.target[np.concatenate((inds[-10:],indt[:5]))][::2]
+    
+        X_target_095 = iris.data[np.concatenate((inds[-10:],indt[:5]))][1::2]
+        y_target_095 = iris.target[np.concatenate((inds[-10:],indt[:5]))][1::2]
+        return [X_source, X_target_005,
+                X_target_095, y_source,
+                y_target_005, y_target_095]
+        
+    def load_6():
+        from sklearn.datasets import load_digits
+        digits = load_digits()
+        
+        X = digits.data[:200]
+        y = (digits.target[:200] == 6).astype(int)
+        
+        X_targ = digits.data[200:]
+        y_targ = (digits.target[200:] == 9 ).astype(int)
+        
+        X_source = X
+        y_source = y
+        
+        # separating 5% & 95% of target data, stratified, random
+        X_target_095, X_target_005, y_target_095, y_target_005 = train_test_split(
+                X_targ,
+                y_targ,
+                test_size=0.05,
+                stratify= y_targ)
+    
+        return [X_source, X_target_005,
+                X_target_095, y_source,
+                y_target_005, y_target_095]
+        
 
-    # Plot the classification threshold
-    # plt.plot(X[0:dataset_length // 2, 0], X[0:dataset_length // 2, 1], "ro")
-    # plt.plot(X[dataset_length // 2:, 0], X[dataset_length // 2:, 1], "bo")
-    # for node, feature in enumerate(clf.tree_.feature):
-    # if feature == 0:
-    # plt.axvline(x=clf.tree_.threshold[node])
-    # elif feature == 1:
-    # plt.axhline(y=clf.tree_.threshold[node])
-    # plt.show()
-    # plot the tree
-    dot_data = tree.export_graphviz(clf, out_file=None,
-                                    feature_names=["feature_" +
-                                                   str(i) for i in range(D)],
-                                    class_names=["class_0", "class_1"],
-                                    filled=True, rounded=True,
-                                    special_characters=True)
+    
+    
+    #import matplotlib.pyplot as plt
+    #import seaborn as sns
+    #from sklearn.tree import export_graphviz
+    #X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_I()
+    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_6()
+     
+    MAX = 5
+    solo_tree = False
+    
+    if solo_tree:
 
-    graph = graphviz.Source(dot_data)
-    graph.render('prarent_tree.gv', view=True)
-    # Build a new dataset
-    X = np.random.randn(dataset_length, D + 1) * 0.1
-    #X[:,1] = np.nan
-    X[0:dataset_length // 2, 0] += 0.3
-    Y = np.ones(dataset_length)
-    Y[0:dataset_length // 2] *= 0
-    # Call STRUT
-    print("Applying STRUT")
+        dtree_or = DecisionTreeClassifier(max_depth=MAX)
+        dtree_or.fit(X_source,y_source)
+    
+        dts = np.zeros(3,dtype=object)
 
-    STRUT(clf, 0, X, Y, 1)
-    # Plot the new thresholds
+        cl_no_red = [1]
+        Nkmin = sum(y_target_005 == cl_no_red )
+        root_source_values = get_node_distribution(dtree_or, 0).reshape(-1)
 
-    # plt.plot(X[0:dataset_length // 2, 0], X[0:dataset_length // 2, 1], "ro")
-    # plt.plot(X[dataset_length // 2:, 0], X[dataset_length // 2:, 1], "bo")
-    # for node, feature in enumerate(clf.tree_.feature):
-    # if feature == 0:
-    # plt.axvline(x=clf.tree_.threshold[node])
-    # elif feature == 1:
-    # plt.axhline(y=clf.tree_.threshold[node])
-    # plt.show()
-    # Plot the new tree
-    dot_data = tree.export_graphviz(clf, out_file=None,
-                                    feature_names=["feature_" +
-                                                   str(i) for i in range(D)],
-                                    class_names=["class_0", "class_1"],
-                                    filled=True, rounded=True,
-                                    special_characters=True)
+        props_s = root_source_values
+        props_s = props_s / sum(props_s)
+        props_t = np.zeros(props_s.size)
+        for k in range(props_s.size):
+            props_t[k] = np.sum(y_target_005 == k) / y_target_005.size
 
-    graph = graphviz.Source(dot_data)
-    graph.render('child_tree.gv', view=True)
+        coeffs = np.divide(props_t, props_s)        
+        dts[0] = copy.deepcopy(dtree_or)
+        STRUT(dts[0],0, X_target_005, y_target_005, X_target_005, y_target_005)    
+    
+        dts[1] = copy.deepcopy(dtree_or)
+        STRUT(dts[1],0, X_target_005, y_target_005, X_target_005, y_target_005, use_divergence=False)
+        
+        dts[2] = copy.deepcopy(dtree_or)
+        STRUT(dts[2],0, X_target_005, y_target_005, X_target_005, y_target_005, adapt_prop=True, coeffs=coeffs)   
+    
+
+        def true_pos(clf,X,y):
+            return sum(clf.predict(X[y==1]) == 1)/sum(y==1)
+        def false_pos(clf,X,y):
+            return sum(clf.predict(X[y==0]) == 1)/sum(y==0)
+        
+        netoile = 2
+        print('score strut:', dts[0].score(X_target_095,y_target_095))
+        print('score strut no div:', dts[1].score(X_target_095,y_target_095))
+        print('score strut*:', dts[netoile].score(X_target_095,y_target_095))
+
+        print('tpr strut:', true_pos(dts[0],X_target_095,y_target_095))
+        print('tpr strut no div:', true_pos(dts[1],X_target_095,y_target_095))
+        print('tpr strut*:', true_pos(dts[netoile],X_target_095,y_target_095))
+
+        print('fpr strut:', false_pos(dts[0],X_target_095,y_target_095))
+        print('fpr strut no div:', false_pos(dts[1],X_target_095,y_target_095))
+        print('fpr strut*:', false_pos(dts[netoile],X_target_095,y_target_095))
+        
+        print('nb feuilles strut :',sum(dts[0].tree_.feature == -2))
+        print('nb feuilles strut*:',sum(dts[netoile].tree_.feature == -2))
+    else:
+        
+        N_EST = 3
+
+        rf_or = RandomForestClassifier(n_estimators = N_EST,max_depth=MAX )
+        rf_or.fit(X_source,y_source)
+    
+        rfs = np.zeros(13,dtype=object)
+
+        rfs[0] = STRUT_RF(rf_or, X_target_005, y_target_005)              
+        rfs[1] = STRUT_RF(rf_or, X_target_005, y_target_005, use_divergence=False)      
+        rfs[2] = STRUT_RF(rf_or, X_target_005, y_target_005, adapt_prop=True)      
+
+        netoile = 2
+        dt = rfs[0].estimators_[0]
+        dt_strut_adapt = rfs[netoile].estimators_[0]
+        
+        print('score strut:', rfs[0].score(X_target_095,y_target_095))
+        print('score strut no div:', rfs[1].score(X_target_095,y_target_095))
+        print('score strut*:', rfs[netoile].score(X_target_095,y_target_095))
+
+        print('tpr strut:', true_pos(rfs[0],X_target_095,y_target_095))
+        print('tpr strut no div:', true_pos(rfs[1],X_target_095,y_target_095))
+        print('tpr strut*:', true_pos(rfs[netoile],X_target_095,y_target_095))
+
+        print('fpr strut:', false_pos(rfs[0],X_target_095,y_target_095))
+        print('fpr strut no div:', false_pos(rfs[1],X_target_095,y_target_095))
+        print('fpr strut*:', false_pos(rfs[netoile],X_target_095,y_target_095))
+        
+        print('nb feuilles strut :',sum(dt.tree_.feature == -2))
+        print('nb feuilles strut*:',sum(dt_strut_adapt.tree_.feature == -2))

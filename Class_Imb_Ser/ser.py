@@ -8,7 +8,6 @@ Created on Wed May 29 19:44:35 2019
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from STRUT import get_node_distribution
 import copy
 
 
@@ -16,7 +15,11 @@ import copy
 # =============================================================================
 # 
 # =============================================================================
-### A bien organiser plus tard
+def get_node_distribution(decisiontree,
+                          node_index):
+    tree = decisiontree.tree_
+    Q = tree.value[node_index]
+    return np.asarray(Q)
 
 def depth_vtree(tree,node):
     p,t,b = extract_rule_vtree(tree,node)
@@ -165,25 +168,6 @@ def find_parent(dtree, i_node):
     return p, b
 
 
-#def find_parent_dic(dic, i_node):
-#    p = -1
-#    b = 0
-#    if i_node != 0 and i_node != -1:
-#
-#        try:
-#            p = list(dic['nodes']['left_child']).index(i_node)
-#            b = -1
-#        except:
-#            p = p
-#        try:
-#            p = list(dic['nodes']['right_child']).index(i_node)
-#            b = 1
-#        except:
-#            p = p
-#
-#    return p, b
-
-
 def sub_nodes(tree, node):
     if (node == -1):
         return list()
@@ -292,14 +276,12 @@ def cut_from_left_right(dTree, node, bool_left_right):
     elif b == -1:
         dic['nodes']['left_child'][p] = repl_node
 
-    #new_size = len(ind)
     dic_old = dic.copy()
     left_old = dic_old['nodes']['left_child']
     right_old = dic_old['nodes']['right_child']
-    #print('taille avant:',dic['nodes'].size)
+
     dic['nodes'] = dic['nodes'][inds]
     dic['values'] = dic['values'][inds]
-    #print('taille après:',dic['nodes'].size)
 
     for i, new in enumerate(inds):
         if (left_old[new] != -1):
@@ -344,14 +326,13 @@ def cut_into_leaf2(dTree, node):
     dic['nodes']['left_child'][node] = -1
     dic['nodes']['right_child'][node] = -1
 
-    #new_size = len(ind)
     dic_old = dic.copy()
     left_old = dic_old['nodes']['left_child']
     right_old = dic_old['nodes']['right_child']
-    #print('taille avant:',dic['nodes'].size)
+
     dic['nodes'] = dic['nodes'][inds]
     dic['values'] = dic['values'][inds]
-    #print('taille après:',dic['nodes'].size)
+
 
     for i, new in enumerate(inds):
         if (left_old[new] != -1):
@@ -402,12 +383,10 @@ def SER(node, dTree, X_target_node, y_target_node, original_ser=True, no_red_on_
         cl_no_red=None, no_ext_on_cl=False, cl_no_ext=None, ext_cond=None, leaf_loss_quantify = False, leaf_loss_threshold = None, coeffs = None, root_source_values = None, Nkmin = None ):
     
 
-    # CARE : Deep copy of value
+    # Deep copy of value
     old_values = dTree.tree_.value[node].copy()
     maj_class = np.argmax(dTree.tree_.value[node, :].copy())
-    
- 
-        
+           
     if cl_no_red is None:
         old_size_cl_no_red = 0
     else:
@@ -420,9 +399,6 @@ def SER(node, dTree, X_target_node, y_target_node, original_ser=True, no_red_on_
             cl = cl_no_red[0]
         
     if leaf_loss_quantify and ((no_red_on_cl  or  no_ext_on_cl) and maj_class == cl) and  dTree.tree_.feature[node] == -2 :
-
-      
-
             
         ps_rf = dTree.tree_.value[node,0,:]/sum(dTree.tree_.value[node,0,:])                
         p1_in_l = dTree.tree_.value[node,0,cl]/root_source_values[cl]
@@ -506,7 +482,6 @@ def SER(node, dTree, X_target_node, y_target_node, original_ser=True, no_red_on_
                             bool_no_red = True
             
             #no red protection with values
-
             if no_red_on_cl and y_target_node.size == 0 and old_size_cl_no_red > 0 and maj_class in cl_no_red:
                 
                 if leaf_loss_quantify :
@@ -553,9 +528,6 @@ def SER(node, dTree, X_target_node, y_target_node, original_ser=True, no_red_on_
                             no_red_on_cl=no_red_on_cl, cl_no_red=cl_no_red,
                             no_ext_on_cl=no_ext_on_cl, cl_no_ext=cl_no_ext, leaf_loss_quantify=leaf_loss_quantify,
                             leaf_loss_threshold=leaf_loss_threshold, coeffs=coeffs,root_source_values=root_source_values,Nkmin=Nkmin)
-        
-        #dic = dTree.tree_.__getstate__().copy()
-        #node, b = find_parent_dic(dic, new_node_left)
     
         node, b = find_parent(dTree, new_node_left)
         
@@ -563,9 +535,7 @@ def SER(node, dTree, X_target_node, y_target_node, original_ser=True, no_red_on_
                              no_red_on_cl=no_red_on_cl, cl_no_red=cl_no_red,
                              no_ext_on_cl=no_ext_on_cl, cl_no_ext=cl_no_ext, leaf_loss_quantify=leaf_loss_quantify, 
                              leaf_loss_threshold=leaf_loss_threshold, coeffs=coeffs,root_source_values=root_source_values,Nkmin=Nkmin)
-      
-    #dic = dTree.tree_.__getstate__().copy()
-    #node, b = find_parent_dic(dic, new_node_right)
+
         node, b = find_parent(dTree, new_node_right)
         
     if original_ser:
@@ -591,10 +561,7 @@ def SER(node, dTree, X_target_node, y_target_node, original_ser=True, no_red_on_
             else:
                 new_node_leaf = cut_into_leaf2(dTree, node)
                 node = new_node_leaf
-#    if le <= e:
-#        new_node_leaf = cut_into_leaf2(dTree, node)
-#        node = new_node_leaf         
-#        
+   
     if dTree.tree_.feature[node] != -2:
         if original_ser:
             if ind_left.size == 0:
@@ -642,9 +609,7 @@ def SER_RF(random_forest, X_target, y_target, original_ser=True, bootstrap_=Fals
                 props_t[k] = np.sum(y_target == k) / y_target.size
             
             coeffs = np.divide(props_t, props_s)
-                
-            #source_values_tot = rf_ser.estimators_[i].tree_.value[0,0,cl_no_red]
-            
+                            
         inds = np.linspace(0, y_target.size - 1, y_target.size).astype(int)
         if bootstrap_:
             inds = bootstrap(y_target.size)
@@ -668,140 +633,64 @@ def bootstrap(size):
 if __name__ == "__main__":
     print('TEST :')
     import sys
-    sys.path.insert(0, "../data_mngmt/")
-    sys.path.insert(0, "../utils/")
+    from sklearn.model_selection import train_test_split
     
-    
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from sklearn.tree import export_graphviz
-    from data import load_letter, load_wine, load_mushroom, load_mnist, load_6, load_T, load_I
-#    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_mnist()
-#    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_letter()
-#    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_I()
-#    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_T(1)
-
-
-# =============================================================================
-#             SYNTH
-# =============================================================================
-    sys.path.insert(0, "../synth_gen/")
-    from Generator import ClusterPoints,StreamGenerator
-    from Changes import apply_drift, delete_clusters, change_cluster_weight, create_new_clusters, apply_density_change
-    import lib_synth_exp as lib
-    def change_prop(sg,weights):
-        labels = list(set(sg.class_labels))
-        N = len(labels)
+    def load_I():
+        from sklearn.datasets import load_iris
+        iris = load_iris()
         
-        nb_cl = np.zeros(N)
+        inds = np.where(iris.data[:,3] > np.median(iris.data[:,3]))[0]
+        indt = np.where(iris.data[:,3] <= np.median(iris.data[:,3]))[0]
         
-        for i in range(N):
-            nb_cl[i] = sg.class_labels.count(labels[i])
-            sg.weights[sg.class_labels == labels[i]] = weights[i]/nb_cl[i]
+        X_source = iris.data[np.concatenate((inds,indt[:5]))]
+        y_source = iris.target[np.concatenate((inds,indt[:5]))]
     
-            clusts = list(np.array(sg.clusters)[sg.class_labels == labels[i]])
-            for c in clusts:
-                c.weight = weights[i]/nb_cl[i]
-
-
-    bool_cluster_change = True
-    del_cluster = [0,0]
-    add_cluster = [10,10]
     
-    drift = False
-    var_change = True
-    v_drift = 30
-    m_drift = 15
-    factor_var_m = 1
-    factor_var_M = 4
+        X_target_005 = iris.data[np.concatenate((inds[-10:],indt[:5]))][::2]
+        y_target_005 = iris.target[np.concatenate((inds[-10:],indt[:5]))][::2]
+    
+        X_target_095 = iris.data[np.concatenate((inds[-10:],indt[:5]))][1::2]
+        y_target_095 = iris.target[np.concatenate((inds[-10:],indt[:5]))][1::2]
+        return [X_source, X_target_005,
+                X_target_095, y_source,
+                y_target_005, y_target_095]
         
-    p0 = 0.95
-    p1 = 1 - p0
-# =============================================================================
-#                 
-# =============================================================================
-    N1 = 15
-    N0 = 15
-    
-    dim = 2
-    space_bound = 50
-    
-    n_source = 500
-    n_target_train = 100
-    n_target_test = 1000
-       
-# =============================================================================
-# 
-# =============================================================================
-    prop1 = 0.5
-    prop1 = prop1/N1
-    prop0 = 0.5
-    prop0 = prop0/N0
-
-    weights = list(np.concatenate((np.repeat(prop1,N1),np.repeat(prop0,N0))))
-    class_labels = list(np.concatenate((np.repeat(1,N1),np.repeat(0,N0))))
-
-
-    name_param = "std"
-    sg = StreamGenerator(number_points=n_source,
-    					 weights=weights,
-    					 dimensionality=dim,
-    					 min_projected_dim=dim,
-    					 max_projected_dim=dim,
-    					 min_coordinate=-space_bound,
-    					 max_coordinate=space_bound,
-    					 min_projected_dim_var=5,
-    					 max_projected_dim_var=15,
-    					 class_labels= class_labels)
-    
-    a = sg.get_full_dataset(n_source)
-    X_source = a[1].values[:,:-1]
-    y_source = a[1].values[:,-1]
-    
-# =============================================================================
-# 
-# =============================================================================
-
-    
-    if bool_cluster_change :
-        if ( sum(np.array(del_cluster))> 0) :
-            for i in range(len(del_cluster)):
-                #ATTENTION:
-                lib.del_cl_prop(sg,del_cluster[i],i,p0)
-        if (sum(np.array(add_cluster))> 0 ) :
-            for i in range(len(del_cluster)):
-                lib.new_cl_prop(sg,add_cluster[i],i,p0)
-    
-    # Drift and Stretching : 
-    if drift:
-        lib.random_drift_cl(sg,v_drift,len(sg.class_labels),bias = m_drift)
-    if var_change :
-        lib.random_var_cl(sg,factor_var_m,factor_var_M,len(sg.class_labels))
-
-    change_prop(sg,[p0,p1])
-# =============================================================================
-# 
-# =============================================================================
-    b = sg.get_full_dataset(n_target_train)
-    X_target_005 = b[1].values[:,:-1]
-    y_target_005 = b[1].values[:,-1]
+    def load_6():
+        from sklearn.datasets import load_digits
+        digits = load_digits()
         
-    c = sg.get_full_dataset(n_target_test)
-    X_target_095 = c[1].values[:,:-1]
-    y_target_095 = c[1].values[:,-1]
-
-# =============================================================================
-# 
-# =============================================================================
-    plots = True 
-    if plots:
-        sns.pairplot( b[1],hue="cluster")
-        sns.pairplot( c[1],hue="cluster")
-        #plt.savefig(path_out+'train.pdf')
-        plt.show()
+        X = digits.data[:200]
+        y = (digits.target[:200] == 6).astype(int)
         
+        X_targ = digits.data[200:]
+        y_targ = (digits.target[200:] == 9 ).astype(int)
+        
+        X_source = X
+        y_source = y
+        
+        # separating 5% & 95% of target data, stratified, random
+        X_target_095, X_target_005, y_target_095, y_target_005 = train_test_split(
+                X_targ,
+                y_targ,
+                test_size=0.05,
+                stratify= y_targ)
+    
+        return [X_source, X_target_005,
+                X_target_095, y_source,
+                y_target_005, y_target_095]
+        
+
+    
+    
+    #import matplotlib.pyplot as plt
+    #import seaborn as sns
+    #from sklearn.tree import export_graphviz
+    #X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_I()
+    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_6()
+     
     MAX = 5
-    solo_tree = True
+    solo_tree = False
+    
     if solo_tree:
 
         
@@ -912,15 +801,26 @@ if __name__ == "__main__":
         rfs[12] = SER_RF(rf_or, X_target_005, y_target_005, original_ser=False, no_red_on_cl=True, cl_no_red=[1],no_ext_on_cl=True, cl_no_ext=[1],ext_cond=True,leaf_loss_quantify=True, leaf_loss_threshold = 0.1)    
         rfs[0] = SER_RF(rf_or, X_target_005, y_target_005, original_ser=False, no_red_on_cl=True, cl_no_red=[1],no_ext_on_cl=True, cl_no_ext=[1],ext_cond=True,leaf_loss_quantify=True, leaf_loss_threshold = 0.9)    
     
+        netoile = 12
         dt = rfs[1].estimators_[0]
-        dt_no_red = rfs[2].estimators_[0]
+        dt_no_red = rfs[netoile].estimators_[0]
         
         print('score ser:', rfs[1].score(X_target_095,y_target_095))
         print('score ser no red:', rfs[2].score(X_target_095,y_target_095))
         print('score ser no ext:', rfs[3].score(X_target_095,y_target_095))
         print('score ser *:', rfs[0].score(X_target_095,y_target_095))
+
+        print('tpr ser:', true_pos(rfs[1],X_target_095,y_target_095))
+        print('tpr ser no red:', true_pos(rfs[2],X_target_095,y_target_095))
+        print('tpr ser no ext:', true_pos(rfs[3],X_target_095,y_target_095))
+        print('tpr ser *:', true_pos(rfs[netoile],X_target_095,y_target_095))
+
+        print('fpr ser:', false_pos(rfs[1],X_target_095,y_target_095))
+        print('fpr ser no red:', false_pos(rfs[2],X_target_095,y_target_095))
+        print('fpr ser no ext:', false_pos(rfs[3],X_target_095,y_target_095))
+        print('fpr ser *:', false_pos(rfs[netoile],X_target_095,y_target_095))
         
         print('nb feuilles ser :',sum(dt.tree_.feature == -2))
-        print('nb feuilles ser no red :',sum(dt_no_red.tree_.feature == -2))
+        print('nb feuilles ser *:',sum(dt_no_red.tree_.feature == -2))
     
     
