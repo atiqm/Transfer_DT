@@ -96,26 +96,16 @@ def STRUT(decisiontree,
           Y_target_node,
           X_target_node_noupdate,
           Y_target_node_noupdate,
-          pruning_updated_node=True,
-          no_prune_on_cl=False,
-          cl_no_prune=None,
-          prune_lone_instance=True,
           adapt_prop=False,
-          simple_weights=False,
           coeffs=[1, 1],
           use_divergence=True,
           measure_default_IG=True):
 
-#    T = decisiontree.tree_
     phi = decisiontree.tree_.feature[node_index]
     classes = decisiontree.classes_
     threshold = decisiontree.tree_.threshold[node_index]
     old_threshold = threshold
 
-
-    current_class_distribution_source = decisiontree.tree_.value[node_index].astype(int)
-    #source_class_distribution = T.value[node_index].astype(int)
-    current_class_distribution_noupdate = lib_tree.compute_class_distribution(classes, Y_target_node_noupdate)
     current_class_distribution = lib_tree.compute_class_distribution(classes, Y_target_node)
 
     decisiontree.tree_.weighted_n_node_samples[node_index] = Y_target_node.size
@@ -124,72 +114,15 @@ def STRUT(decisiontree,
 
     # If it is a leaf one, exit
     if decisiontree.tree_.children_left[node_index] == -2:
-    #if tree.children_left[node_index] == -1 and tree.children_right[node_index] == -1:
-        # print("it's a leaf")
-        # update tree.value
+
         decisiontree.tree_.value[node_index] = current_class_distribution
         return node_index
 
     is_reached_update = (current_class_distribution.sum() != 0)
-    is_reached_noupdate = (current_class_distribution_noupdate.sum() != 0)
+    prune_cond = not is_reached_update
 
-    is_instance_cl_no_prune = np.sum(decisiontree.tree_.value[node_index, :,
-                                                cl_no_prune].astype(int))
-#     print("is_reached_update : ", is_reached_update)
-#     print("is_reached_noupdate : ", is_reached_noupdate)
-
-    # NEW prune_cond
-    add_source_value = False
-    # print("is_reached_update : ", is_reached_update)
-    # print("is_reached_noupdate : ", is_reached_noupdate)
-    # print("is_instance_cl_no_prune : ", is_instance_cl_no_prune)
-    if pruning_updated_node:
-        if no_prune_on_cl:
-            # flag meaning need to add source value (to avoid zero !)
-            add_source_value = not is_reached_update and is_instance_cl_no_prune
-            prune_cond = not is_reached_update and not is_instance_cl_no_prune
-        else:
-            prune_cond = not is_reached_update
-    else:
-        if no_prune_on_cl:
-            # flag meaning need to add source value (to avoid zero !)
-            add_source_value = not is_reached_update and is_instance_cl_no_prune
-            prune_cond = not is_reached_noupdate and not is_instance_cl_no_prune
-        else:
-            prune_cond = not is_reached_noupdate or not is_reached_update
-
-    # OLD prune_cond
-    # prune_cond = not is_reached_update or (not pruning_updated_node and (not is_reached_noupdate) and ((not no_prune_on_cl) or (not is_instance_cl_no_prune)))
-    # if no target data at all or ((not reached) and (pruning activated or no
-    # instance to preserve)), then prune
 
     if prune_cond:
-        # print("PRUNING at node ", node_index)
-#        prune_subtree(decisiontree,
-#                      node_index)
-#        parent_node, b_p = find_parent(tree, node_index)
-#        # Get the brother index
-#        if b_p == -1:  # current_node is left_children
-#            brother_node = tree.children_right[parent_node]
-#        if b_p == 1:  # current_node is right_children
-#            brother_node = tree.children_left[parent_node]
-#        # Get grand parent index
-#        grand_parent_node, b_gp = find_parent(tree, parent_node)
-#        # Shunt the parent
-#        if b_gp == -1:  # parent is left_children of grandparent
-#            tree.children_left[grand_parent_node] = brother_node
-#
-#        if b_gp == 1:  # parent is right_children of grandparent
-#            tree.children_right[grand_parent_node] = brother_node
-#        # supress the current node
-#        # tree.children_left[node_index] = -1  # seem useless since already done in prune_subtree func
-#        # tree.children_right[node_index] = -1
-#        tree.children_left[parent_node] = -1  # important
-#        tree.children_right[parent_node] = -1
-        
-        # =============================================================================
-        #         
-        # =============================================================================
 
         p,b = lib_tree.find_parent(decisiontree, node_index)
         node_index = lib_tree.cut_from_left_right(decisiontree,p,b)
@@ -202,37 +135,13 @@ def STRUT(decisiontree,
 
     # update tree.value with target data
     decisiontree.tree_.value[node_index] = current_class_distribution
-    if add_source_value:
-        # print("adding source value to node")
-        decisiontree.tree_.value[node_index] = current_class_distribution_source
-        decisiontree.tree_.n_node_samples[node_index] = np.sum(current_class_distribution_source)
-        decisiontree.tree_.weighted_n_node_samples[node_index] = np.sum(current_class_distribution_source)
-        lib_tree.add_to_parents(decisiontree, node_index,current_class_distribution_source)
-        
-        return node_index
 
     # Only one class is present in the node -> terminal leaf
     if (current_class_distribution > 0).sum() == 1:
-        # print("Only one class in node {} --> PRUNING".format(node_index))
+
         node_index = lib_tree.cut_into_leaf2(decisiontree, node_index)
-
-        #prune_subtree(decisiontree,node_index)
-        #tree.feature[node_index] = -2
-
-        
         return node_index
-    # Only one instance -> pruning into leaf
-    # if current_class_distribution.sum() == 1:
-        # # print("Only one instance in node {} --> PRUNING ? ".format(node_index))
-        # if prune_lone_instance:
-        # # print("YES")
-        # prune_subtree(decisiontree,
-        # node_index)
-        # tree.feature[node_index] = -2
-        # # else:
-        # # if is_instance_cl_no_prune:
-        # # print("NO")
-        # return 0
+    
 
     # update threshold
     if type(threshold) is np.float64:
@@ -241,45 +150,24 @@ def STRUT(decisiontree,
         Sl = np.sum(Q_source_l)
         Sr = np.sum(Q_source_r)
 
-
-        if simple_weights:
-
-            Q_source_l = np.multiply(coeffs, Q_source_l)
-            Q_source_r = np.multiply(coeffs, Q_source_r)
-            
-#        if adapt_prop_hetero:
-#            Q_source_l = np.multiply(coeffs, Q_source_l)
-#            D = np.sum(Q_source_l)
-#            Q_source_l = np.divide(Q_source_l,D)
-#            Q_source_r = np.multiply(coeffs, Q_source_r)
-#            D = np.sum(Q_source_r)
-#            Q_source_r = np.divide(Q_source_r,D)  
-            
+   
         if adapt_prop:
             Sl = np.sum(Q_source_l)
             Sr = np.sum(Q_source_r)
             Slt = Y_target_node.size
             Srt = Y_target_node.size
 
-            #Q_source_l = Q_source_l/np.sum(Q_source_l) 
-            #Q_source_r = Q_source_r/np.sum(Q_source_r) 
-            
-            #Q_source_l = np.multiply(coeffs, Q_source_l)
             
             D = np.sum(np.multiply(coeffs, Q_source_l))
             Q_source_l = (Slt/Sl)*np.multiply(coeffs,np.divide(Q_source_l,D))
             D = np.sum(np.multiply(coeffs, Q_source_r))
             Q_source_r = (Srt/Sr)*np.multiply(coeffs,np.divide(Q_source_r,D))            
-            
-            #Q_source_r = np.multiply(coeffs, Q_source_r)
-            #D = np.sum(Q_source_r)
-            #Q_source_r = Sr*np.divide(Q_source_r,D)    
+              
             
         Q_source_parent = lib_tree.get_node_distribution(decisiontree,
                                                 node_index)
 
-        # print("threshold selection : X_target_node shape : ",
-        # X_target_node.shape)
+
         t1 = threshold_selection(Q_source_parent,
                                  Q_source_l.copy(),
                                  Q_source_r.copy(),
@@ -347,11 +235,7 @@ def STRUT(decisiontree,
               Y_target_child_l,
               X_target_node_noupdate_l,
               Y_target_node_noupdate_l,
-              pruning_updated_node=pruning_updated_node,
-              no_prune_on_cl=no_prune_on_cl,
-              cl_no_prune=cl_no_prune,
               adapt_prop=adapt_prop,
-              simple_weights=simple_weights,
               coeffs=coeffs,
               use_divergence = use_divergence,
               measure_default_IG=measure_default_IG)
@@ -376,11 +260,7 @@ def STRUT(decisiontree,
               Y_target_child_r,
               X_target_node_noupdate_r,
               Y_target_node_noupdate_r,
-              pruning_updated_node=pruning_updated_node,
-              no_prune_on_cl=no_prune_on_cl,
-              cl_no_prune=cl_no_prune,
               adapt_prop=adapt_prop,
-              simple_weights=simple_weights,
               coeffs=coeffs,
               use_divergence=use_divergence,
               measure_default_IG=measure_default_IG)
@@ -394,19 +274,14 @@ def STRUT(decisiontree,
 def STRUT_RF(random_forest,
              X_target,
              y_target,
-             pruning_updated_node=True,
-             no_prune_on_cl=False,
-             cl_no_prune=None,
-             prune_lone_instance=True,
              adapt_prop=False,
-             simple_weights=False,
              use_divergence=True,
              measure_default_IG=True):
 
     rf_strut = copy.deepcopy(random_forest)
     for i, dtree in enumerate(rf_strut.estimators_):
 
-        if adapt_prop or simple_weights:
+        if adapt_prop:
             props_s = lib_tree.get_node_distribution(rf_strut.estimators_[i], 0)
             props_s = props_s / sum(props_s)
             props_t = np.zeros(props_s.size)
@@ -416,8 +291,6 @@ def STRUT_RF(random_forest,
                 
             coeffs = np.divide(props_t, props_s)
                 
-
-
             #print("tree : ", i)
             STRUT(rf_strut.estimators_[i],
                   0,
@@ -425,12 +298,7 @@ def STRUT_RF(random_forest,
                   y_target,
                   X_target,
                   y_target,
-                  pruning_updated_node=pruning_updated_node,
-                  no_prune_on_cl=no_prune_on_cl,
-                  cl_no_prune=cl_no_prune,
-                  prune_lone_instance=prune_lone_instance,
                   adapt_prop=adapt_prop,
-                  simple_weights=simple_weights,
                   coeffs=coeffs,
                   use_divergence=use_divergence,
                   measure_default_IG=measure_default_IG)
@@ -441,10 +309,6 @@ def STRUT_RF(random_forest,
                   y_target,
                   X_target,
                   y_target,
-                  pruning_updated_node=pruning_updated_node,
-                  no_prune_on_cl=no_prune_on_cl,
-                  cl_no_prune=cl_no_prune,
-                  prune_lone_instance=prune_lone_instance,
                   use_divergence=use_divergence,
                   measure_default_IG=measure_default_IG)
 
