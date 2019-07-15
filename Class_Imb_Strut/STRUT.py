@@ -10,8 +10,6 @@ Created on Tue Jun 11 14:52:46 2019
 import os,sys
 import numpy as np
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
 import copy
 
 
@@ -94,8 +92,6 @@ def STRUT(decisiontree,
           node_index,
           X_target_node,
           Y_target_node,
-          X_target_node_noupdate,
-          Y_target_node_noupdate,
           adapt_prop=False,
           coeffs=[1, 1],
           use_divergence=True,
@@ -104,7 +100,7 @@ def STRUT(decisiontree,
     phi = decisiontree.tree_.feature[node_index]
     classes = decisiontree.classes_
     threshold = decisiontree.tree_.threshold[node_index]
-    old_threshold = threshold
+    #old_threshold = threshold
 
     current_class_distribution = lib_tree.compute_class_distribution(classes, Y_target_node)
 
@@ -220,9 +216,9 @@ def STRUT(decisiontree,
 
     if decisiontree.tree_.children_left[node_index] != -1:
         # Computing target data passing through node NOT updated
-        index_X_child_l = X_target_node_noupdate[:, phi] <= old_threshold
-        X_target_node_noupdate_l = X_target_node_noupdate[index_X_child_l, :]
-        Y_target_node_noupdate_l = Y_target_node_noupdate[index_X_child_l]
+        #index_X_child_l = X_target_node_noupdate[:, phi] <= old_threshold
+        #X_target_node_noupdate_l = X_target_node_noupdate[index_X_child_l, :]
+        #Y_target_node_noupdate_l = Y_target_node_noupdate[index_X_child_l]
         # Computing target data passing through node updated
         threshold = decisiontree.tree_.threshold[node_index]
         index_X_child_l = X_target_node[:, phi] <= threshold
@@ -233,8 +229,6 @@ def STRUT(decisiontree,
               decisiontree.tree_.children_left[node_index],
               X_target_child_l,
               Y_target_child_l,
-              X_target_node_noupdate_l,
-              Y_target_node_noupdate_l,
               adapt_prop=adapt_prop,
               coeffs=coeffs,
               use_divergence = use_divergence,
@@ -245,9 +239,9 @@ def STRUT(decisiontree,
 
     if decisiontree.tree_.children_right[node_index] != -1:
         # Computing target data passing through node NOT updated
-        index_X_child_r = X_target_node_noupdate[:, phi] > old_threshold
-        X_target_node_noupdate_r = X_target_node_noupdate[index_X_child_r, :]
-        Y_target_node_noupdate_r = Y_target_node_noupdate[index_X_child_r]
+        #index_X_child_r = X_target_node_noupdate[:, phi] > old_threshold
+        #X_target_node_noupdate_r = X_target_node_noupdate[index_X_child_r, :]
+        #Y_target_node_noupdate_r = Y_target_node_noupdate[index_X_child_r]
         # Computing target data passing through node updated
         threshold = decisiontree.tree_.threshold[node_index]
         index_X_child_r = X_target_node[:, phi] > threshold
@@ -258,8 +252,6 @@ def STRUT(decisiontree,
               decisiontree.tree_.children_right[node_index],
               X_target_child_r,
               Y_target_child_r,
-              X_target_node_noupdate_r,
-              Y_target_node_noupdate_r,
               adapt_prop=adapt_prop,
               coeffs=coeffs,
               use_divergence=use_divergence,
@@ -296,8 +288,6 @@ def STRUT_RF(random_forest,
                   0,
                   X_target,
                   y_target,
-                  X_target,
-                  y_target,
                   adapt_prop=adapt_prop,
                   coeffs=coeffs,
                   use_divergence=use_divergence,
@@ -307,153 +297,11 @@ def STRUT_RF(random_forest,
                   0,
                   X_target,
                   y_target,
-                  X_target,
-                  y_target,
                   use_divergence=use_divergence,
                   measure_default_IG=measure_default_IG)
 
     return rf_strut
 
     
-if __name__ == "__main__":
-    print('TEST :')
-    import sys
-    from sklearn.model_selection import train_test_split
-    
-    def load_I():
-        from sklearn.datasets import load_iris
-        iris = load_iris()
-        
-        inds = np.where(iris.data[:,3] > np.median(iris.data[:,3]))[0]
-        indt = np.where(iris.data[:,3] <= np.median(iris.data[:,3]))[0]
-        
-        X_source = iris.data[np.concatenate((inds,indt[:5]))]
-        y_source = iris.target[np.concatenate((inds,indt[:5]))]
-    
-    
-        X_target_005 = iris.data[np.concatenate((inds[-10:],indt[:5]))][::2]
-        y_target_005 = iris.target[np.concatenate((inds[-10:],indt[:5]))][::2]
-    
-        X_target_095 = iris.data[np.concatenate((inds[-10:],indt[:5]))][1::2]
-        y_target_095 = iris.target[np.concatenate((inds[-10:],indt[:5]))][1::2]
-        return [X_source, X_target_005,
-                X_target_095, y_source,
-                y_target_005, y_target_095]
-        
-    def load_6():
-        from sklearn.datasets import load_digits
-        digits = load_digits()
-        
-        X = digits.data[:200]
-        y = (digits.target[:200] == 6).astype(int)
-        
-        X_targ = digits.data[200:]
-        y_targ = (digits.target[200:] == 9 ).astype(int)
-        
-        X_source = X
-        y_source = y
-        
-        # separating 5% & 95% of target data, stratified, random
-        X_target_095, X_target_005, y_target_095, y_target_005 = train_test_split(
-                X_targ,
-                y_targ,
-                test_size=0.05,
-                stratify= y_targ)
-    
-        return [X_source, X_target_005,
-                X_target_095, y_source,
-                y_target_005, y_target_095]
-        
-
-    
-    
-    #import matplotlib.pyplot as plt
-    #import seaborn as sns
-    #from sklearn.tree import export_graphviz
-    #X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_I()
-    X_source, X_target_005, X_target_095, y_source, y_target_005, y_target_095 = load_6()
-     
-    MAX = 5
-    solo_tree = False
-
-
-    def true_pos(clf,X,y):
-        return sum(clf.predict(X[y==1]) == 1)/sum(y==1)
-    def false_pos(clf,X,y):
-        return sum(clf.predict(X[y==0]) == 1)/sum(y==0)    
-    
-    if solo_tree:
-
-        dtree_or = DecisionTreeClassifier(max_depth=MAX)
-        dtree_or.fit(X_source,y_source)
-    
-        dts = np.zeros(3,dtype=object)
-
-        cl_no_red = [1]
-        Nkmin = sum(y_target_005 == cl_no_red )
-        root_source_values = lib_tree.get_node_distribution(dtree_or, 0).reshape(-1)
-
-        props_s = root_source_values
-        props_s = props_s / sum(props_s)
-        props_t = np.zeros(props_s.size)
-        for k in range(props_s.size):
-            props_t[k] = np.sum(y_target_005 == k) / y_target_005.size
-
-        coeffs = np.divide(props_t, props_s)        
-        dts[0] = copy.deepcopy(dtree_or)
-        STRUT(dts[0],0, X_target_005, y_target_005, X_target_005, y_target_005)    
-    
-        dts[1] = copy.deepcopy(dtree_or)
-        STRUT(dts[1],0, X_target_005, y_target_005, X_target_005, y_target_005, use_divergence=False)
-        
-        dts[2] = copy.deepcopy(dtree_or)
-        STRUT(dts[2],0, X_target_005, y_target_005, X_target_005, y_target_005, adapt_prop=True, coeffs=coeffs)   
-    
-
-        
-        netoile = 2
-        print('score strut:', dts[0].score(X_target_095,y_target_095))
-        print('score strut no div:', dts[1].score(X_target_095,y_target_095))
-        print('score strut*:', dts[netoile].score(X_target_095,y_target_095))
-
-        print('tpr strut:', true_pos(dts[0],X_target_095,y_target_095))
-        print('tpr strut no div:', true_pos(dts[1],X_target_095,y_target_095))
-        print('tpr strut*:', true_pos(dts[netoile],X_target_095,y_target_095))
-
-        print('fpr strut:', false_pos(dts[0],X_target_095,y_target_095))
-        print('fpr strut no div:', false_pos(dts[1],X_target_095,y_target_095))
-        print('fpr strut*:', false_pos(dts[netoile],X_target_095,y_target_095))
-        
-        print('nb feuilles strut :',sum(dts[0].tree_.feature == -2))
-        print('nb feuilles strut*:',sum(dts[netoile].tree_.feature == -2))
-    else:
-        
-        N_EST = 3
-
-        rf_or = RandomForestClassifier(n_estimators = N_EST,max_depth=MAX )
-        rf_or.fit(X_source,y_source)
-    
-        rfs = np.zeros(13,dtype=object)
-
-        rfs[0] = STRUT_RF(rf_or, X_target_005, y_target_005)              
-        rfs[1] = STRUT_RF(rf_or, X_target_005, y_target_005, use_divergence=False)      
-        rfs[2] = STRUT_RF(rf_or, X_target_005, y_target_005, adapt_prop=True)      
-
-        netoile = 2
-        dt = rfs[0].estimators_[0]
-        dt_strut_adapt = rfs[netoile].estimators_[0]
-        
-        print('score strut:', rfs[0].score(X_target_095,y_target_095))
-        print('score strut no div:', rfs[1].score(X_target_095,y_target_095))
-        print('score strut*:', rfs[netoile].score(X_target_095,y_target_095))
-
-        print('tpr strut:', true_pos(rfs[0],X_target_095,y_target_095))
-        print('tpr strut no div:', true_pos(rfs[1],X_target_095,y_target_095))
-        print('tpr strut*:', true_pos(rfs[netoile],X_target_095,y_target_095))
-
-        print('fpr strut:', false_pos(rfs[0],X_target_095,y_target_095))
-        print('fpr strut no div:', false_pos(rfs[1],X_target_095,y_target_095))
-        print('fpr strut*:', false_pos(rfs[netoile],X_target_095,y_target_095))
-        
-        print('nb feuilles strut :',sum(dt.tree_.feature == -2))
-        print('nb feuilles strut*:',sum(dt_strut_adapt.tree_.feature == -2))
+#if __name__ == "__main__":
+#    print('TEST :')
