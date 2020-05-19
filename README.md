@@ -1,12 +1,12 @@
-# Transfer algorithms on Decision Trees with Class Imbalance
+# Transfer algorithms on Decision Trees
 
 
 ## Introduction
 
-SER and STRUT are two transfer learning algorithms applicable on decision trees and random forests designed by Segev et al. [1].
-To tackle the class imbalance problem, several variants are proposed. These adaptations are presented with results on various experiments in Minvielle et al. [2].  
-This code includes Python implementations of the original algorithms and their
-class-imabalance adapted variants.
+SER and STRUT are two transfer learning algorithms applicable on decision trees (and therefore any tree ensemble such as a random forest) designed by Segev et al. [1].
+To tackle the **class imbalance** problem, several variants are proposed. These adaptations are presented with results on various experiments in Minvielle et al. [2].  
+This code includes Python implementations of the original algorithms [1] and their
+class-imabalance adapted variants [2].
 
 ## References
 
@@ -19,7 +19,10 @@ class-imabalance adapted variants.
 
 ### Pre-requisites
 
-The code is developed with python 3.5 and scikit-learn 0.21 versions.
+The code is developed with Python 3.5 and Scikit-learn 0.21 versions.
+It acts directly on the Scikit-learn Decision Tree class.
+
+## Details
 
 ### lib_tree.py
 
@@ -28,11 +31,11 @@ Path: *Transfer_DT/*
 
 All sub-functions that manipulates decision trees structure, compute scores (error, gini, divergence...) used by the transfer algorithms.
 
-### STRUT.py
+### strut.py
 
 path: *Transfer_DT/Class_Imb_Strut/*
 
-STRUT and its variant versions. Each version corresponding to different Boolean parameters  of the function.
+STRUT and its variant versions. Each version corresponding to different Boolean parameters of the function.
 
 versions : 
 
@@ -41,16 +44,17 @@ versions :
 STRUT.STRUT(DT_source, 0, X_target, y_target)
 ```
 
-* STRUT no Divergence
+* STRUT without the divergence (classical information gain instead)
+  (STRUT ND in [2], or STRUT<sub>IG</sub>)
 ```python
 STRUT.STRUT(DT_source, 0, X_target, y_target, use_divergence=False)
 ```
 
-* STRUT Imb
+* STRUT adapted to homogeneous imbalanced (STRUT<sup>\*</sup> in [2], or
+  STRUT<sub>HI</sub>)
 ```python
 STRUT.STRUT(DT_source, 0, X_target, y_target, adapt_prop=True, coeffs=[0.95,0.05])
 ```
-
 
 
 ### ser.py
@@ -58,7 +62,7 @@ STRUT.STRUT(DT_source, 0, X_target, y_target, adapt_prop=True, coeffs=[0.95,0.05
 path: *Transfer_DT/Class_Imb_Ser/*
 
 
-SER and its variant versions. Each version corresponding to different Boolean parameters   of the function.
+SER and its variant versions. Each version corresponding to different Boolean parameters of the function.
 
 versions : 
 
@@ -67,24 +71,31 @@ versions :
 ser.SER(DT_source, X_target, y_target, original_ser=True)
 ```
 
-* SER no Reduction
+* SER without reduction (SER<sup>\*</sup> in [2])
 ```python
 ser.SER(DT_source, X_target, y_target, original_ser=False, no_red_on_cl=True, cl_no_red=[1])
 ```
 
-* SER no Expansion
+* SER without expansion
 ```python
 ser.SER(DT_source, X_target, y_target, original_ser=False, no_ext_on_cl=True, cl_no_ext=[1])
 ```
 
 
-* SER with Leaf Loss Risk Estimation
+* SER with leaf loss risk estimation (or SER<sub>LL</sub>)
 ```python
 ser.SER(DT_source, X_target, y_target, original_ser=False, no_red_on_cl=True, cl_no_red=[1], leaf_loss_quantify=True, leaf_loss_threshold=0.5) 
 ```
 
+## Basic example
+path: *Transfer_DT/examples/*
+
+Executing basic_example.py yields:
+![](./images/ser_strut.png)
 
 
-## Examples
+## More advanced examples
 
 path: *Transfer_DT/examples/*
+
+example_ser.py and example_strut.py execute several variants over real data.
