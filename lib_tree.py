@@ -1,21 +1,17 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jul  9 19:11:42 2019
-
-@author: mounir
-"""
 import numpy as np
 
-def depth_rf(rf):
-    d = 0
-    for p in rf.estimators_:
-        d = d + p.tree_.max_depth
-    return d/len(rf.estimators_)
 
-def depth(dtree,node):
-    p,t,b = extract_rule(dtree,node)
+# def depth_rf(rf):
+    # d = 0
+    # for p in rf.estimators_:
+        # d = d + p.tree_.max_depth
+    # return d / len(rf.estimators_)
+
+
+def depth(dtree, node):
+    p, t, b = extract_rule(dtree, node)
     return len(p)
+
 
 def depth_array(dtree, inds):
     depths = np.zeros(np.array(inds).size)
@@ -52,9 +48,11 @@ def error(tree, node):
 
                 return (el * nl + er * nr) / (nl + nr)
 # =============================================================================
-# 
+#
 # =============================================================================
-def extract_rule(dtree,node):
+
+
+def extract_rule(dtree, node):
 
     feats = list()
     ths = list()
@@ -63,29 +61,30 @@ def extract_rule(dtree,node):
     b = 1
     if node != 0:
         while b != 0:
-           
+
             feats.append(dtree.tree_.feature[node])
             ths.append(dtree.tree_.threshold[node])
             bools.append(b)
             nodes.append(node)
-            node,b = find_parent(dtree,node)
-            
+            node, b = find_parent(dtree, node)
+
         feats.pop(0)
         ths.pop(0)
         bools.pop(0)
         nodes.pop(0)
-  
+
     return np.array(feats), np.array(ths), np.array(bools)
 
 
 def extract_leaves_rules(dtree):
     leaves = np.where(dtree.tree_.feature == -2)[0]
-    
-    rules = np.zeros(leaves.size,dtype = object)
-    for k,f in enumerate(leaves) :
-        rules[k] = extract_rule(dtree,f)
-        
+
+    rules = np.zeros(leaves.size, dtype=object)
+    for k, f in enumerate(leaves):
+        rules[k] = extract_rule(dtree, f)
+
     return leaves, rules
+
 
 def find_parent(dtree, i_node):
     p = -1
@@ -116,7 +115,7 @@ def sub_nodes(tree, node):
 
 
 # =============================================================================
-#            
+#
 # =============================================================================
 
 def fusionTree(tree1, f, tree2):
@@ -187,6 +186,7 @@ def fusionDecisionTree(dTree1, f, dTree2):
         print(e)
     dTree1.max_depth = dTree1.tree_.max_depth
     return dTree1
+
 
 def cut_from_left_right(dTree, node, bool_left_right):
     dic = dTree.tree_.__getstate__().copy()
@@ -273,7 +273,6 @@ def cut_into_leaf2(dTree, node):
     dic['nodes'] = dic['nodes'][inds]
     dic['values'] = dic['values'][inds]
 
-
     for i, new in enumerate(inds):
         if (left_old[new] != -1):
             dic['nodes']['left_child'][i] = inds.index(left_old[new])
@@ -291,6 +290,7 @@ def cut_into_leaf2(dTree, node):
     dTree.tree_.__setstate__(dic)
 
     return inds.index(node)
+
 
 def add_to_parents(dTree, node, values):
 
@@ -312,10 +312,12 @@ def add_to_child(dTree, node, values):
     if l != -1:
         dTree.tree_.value[l] = dTree.tree_.value[l] + values
         add_to_child(dTree, l, values)
-        
+
 # =============================================================================
-#         
+#
 # =============================================================================
+
+
 def get_children_distributions(decisiontree,
                                node_index):
     tree = decisiontree.tree_
@@ -363,7 +365,6 @@ def compute_Q_children_target(X_target_node,
     return Q_target_l, Q_target_r
 
 
-
 def KL_divergence(class_counts_P,
                   class_counts_Q):
     # KL Divergence to assess the difference between two distributions
@@ -376,6 +377,7 @@ def KL_divergence(class_counts_P,
     Q = class_counts_Q * 1. / class_counts_Q.sum()
     Dkl = (P * np.log(P * 1. / Q)).sum()
     return Dkl
+
 
 def H(class_counts):
     # Entropy
@@ -420,12 +422,8 @@ def DG(Q_source_l,
     return 1. - p_l * JSD(Q_target_l, Q_source_l) - p_r * JSD(Q_target_r, Q_source_r)
 
 
-
 def GINI(class_distribution):
     if class_distribution.sum():
         p = class_distribution / class_distribution.sum()
         return 1 - (p**2).sum()
     return 0
-        
-        
-        
