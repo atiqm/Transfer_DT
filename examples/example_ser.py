@@ -1,16 +1,9 @@
-import os
 import sys
 sys.path.insert(0, '..')
-sys.path.insert(0, '../Class_Imb_Ser/')
 import lib_tree
 import ser
-
-# =============================================================================
-#
-# =============================================================================
-
-import numpy as np
 import copy
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split

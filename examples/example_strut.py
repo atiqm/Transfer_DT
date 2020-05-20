@@ -1,16 +1,9 @@
-import os
 import sys
 sys.path.insert(0, '..')
-sys.path.insert(0, '../Class_Imb_Strut/')
 import lib_tree
-import STRUT
-
-# =============================================================================
-#
-# =============================================================================
-
-import numpy as np
+import strut
 import copy
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -101,27 +94,27 @@ if solo_tree:
 
     coeffs = np.divide(props_t, props_s)
 
-    strut = copy.deepcopy(dtree_or)
+    strut_original = copy.deepcopy(dtree_or)
     strut_no_div = copy.deepcopy(dtree_or)
     strut_imb = copy.deepcopy(dtree_or)
 
-    STRUT.STRUT(strut, 0, X_target_005, y_target_005)
-    STRUT.STRUT(strut_no_div, 0, X_target_005, y_target_005, use_divergence=False)
-    STRUT.STRUT(strut_imb, 0, X_target_005, y_target_005, adapt_prop=True, coeffs=coeffs)
+    strut.STRUT(strut_original, 0, X_target_005, y_target_005)
+    strut.STRUT(strut_no_div, 0, X_target_005, y_target_005, use_divergence=False)
+    strut.STRUT(strut_imb, 0, X_target_005, y_target_005, adapt_prop=True, coeffs=coeffs)
 
-    print('score strut:', strut.score(X_target_095, y_target_095))
+    print('score strut:', strut_original.score(X_target_095, y_target_095))
     print('score strut no div:', strut_no_div.score(X_target_095, y_target_095))
     print('score strut*:', strut_imb.score(X_target_095, y_target_095))
 
-    print('tpr strut:', true_pos(strut, X_target_095, y_target_095))
+    print('tpr strut:', true_pos(strut_original, X_target_095, y_target_095))
     print('tpr strut no div:', true_pos(strut_no_div, X_target_095, y_target_095))
     print('tpr strut*:', true_pos(strut_imb, X_target_095, y_target_095))
 
-    print('fpr strut:', false_pos(strut, X_target_095, y_target_095))
+    print('fpr strut:', false_pos(strut_original, X_target_095, y_target_095))
     print('fpr strut no div:', false_pos(strut_no_div, X_target_095, y_target_095))
     print('fpr strut*:', false_pos(strut_imb, X_target_095, y_target_095))
 
-#    print('nb feuilles strut :',sum(strut.tree_.feature == -2))
+#    print('nb feuilles strut :',sum(strut_original.tree_.feature == -2))
 #    print('nb feuilles strut :',sum(strut_no_div.tree_.feature == -2))
 #    print('nb feuilles strut*:',sum(strut_imb.tree_.feature == -2))
 
@@ -136,9 +129,9 @@ else:
     rf_or = RandomForestClassifier(n_estimators=N_EST, max_depth=MAX)
     rf_or.fit(X_source, y_source)
 
-    rf_strut = STRUT.STRUT_RF(rf_or, X_target_005, y_target_005)
-    rf_strut_no_div = STRUT.STRUT_RF(rf_or, X_target_005, y_target_005, use_divergence=False)
-    rf_strut_imb = STRUT.STRUT_RF(rf_or, X_target_005, y_target_005, adapt_prop=True)
+    rf_strut = strut.STRUT_RF(rf_or, X_target_005, y_target_005)
+    rf_strut_no_div = strut.STRUT_RF(rf_or, X_target_005, y_target_005, use_divergence=False)
+    rf_strut_imb = strut.STRUT_RF(rf_or, X_target_005, y_target_005, adapt_prop=True)
 
     print('score strut:', rf_strut.score(X_target_095, y_target_095))
     print('score strut no div:', rf_strut_no_div.score(X_target_095, y_target_095))
