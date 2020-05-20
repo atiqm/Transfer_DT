@@ -8,6 +8,8 @@ To tackle the **class imbalance** problem, several variants are proposed. These 
 This code includes Python implementations of the original algorithms [1] and their
 class-imabalance adapted variants [2].
 
+This code is still under development.
+
 ## References
 
 [1] N. Segev, M. Harel, S. Mannor, K. Crammer, and R. El-Yaniv, “Learn on  source,  refine  on  target:  a  model  transfer  learning  framework  with random  forests,” *IEEE  transactions  on  pattern  analysis  and  machine intelligence*, vol. 39, no. 9, pp. 1811–1824, 2017.
@@ -24,12 +26,12 @@ It acts directly on the Scikit-learn Decision Tree class.
 
 ## Details
 
-### lib_tree.py
+<!--### lib_tree.py-->
 
-Path: *Transfer_DT/*
+<!--Path: *Transfer_DT/*-->
 
 
-All sub-functions that manipulates decision trees structure, compute scores (error, gini, divergence...) used by the transfer algorithms.
+<!--All sub-functions that manipulates decision trees structure, compute scores (error, gini, divergence...) used by the transfer algorithms.-->
 
 ### strut.py
 
@@ -41,19 +43,19 @@ versions :
 
 * STRUT
 ```python
-STRUT.STRUT(DT_source, 0, X_target, y_target)
+strut.STRUT(DT_source, 0, X_target, y_target)
 ```
 
 * STRUT without the divergence (classical information gain instead)
   (STRUT ND in [2], or STRUT<sub>IG</sub>)
 ```python
-STRUT.STRUT(DT_source, 0, X_target, y_target, use_divergence=False)
+strut.STRUT(DT_source, 0, X_target, y_target, use_divergence=False)
 ```
 
 * STRUT adapted to homogeneous imbalanced (STRUT<sup>\*</sup> in [2], or
   STRUT<sub>HI</sub>)
 ```python
-STRUT.STRUT(DT_source, 0, X_target, y_target, adapt_prop=True, coeffs=[0.95,0.05])
+strut.STRUT(DT_source, 0, X_target, y_target, X_target, y_target, adapt_prop=True, coeffs=[0.95,0.05])
 ```
 
 
@@ -68,23 +70,23 @@ versions :
 
 * SER
 ```python
-ser.SER(DT_source, X_target, y_target, original_ser=True)
+ser.SER(0, DT_source, X_target, y_target, original_ser=True)
 ```
 
 * SER without reduction (SER<sup>\*</sup> in [2])
 ```python
-ser.SER(DT_source, X_target, y_target, original_ser=False, no_red_on_cl=True, cl_no_red=[1])
+ser.SER(0, DT_source, X_target, y_target, original_ser=False, no_red_on_cl=True, cl_no_red=[1])
 ```
 
 * SER without expansion
 ```python
-ser.SER(DT_source, X_target, y_target, original_ser=False, no_ext_on_cl=True, cl_no_ext=[1])
+ser.SER(0, DT_source, X_target, y_target, original_ser=False, no_ext_on_cl=True, cl_no_ext=[1])
 ```
 
 
 * SER with leaf loss risk estimation (or SER<sub>LL</sub>)
 ```python
-ser.SER(DT_source, X_target, y_target, original_ser=False, no_red_on_cl=True, cl_no_red=[1], leaf_loss_quantify=True, leaf_loss_threshold=0.5) 
+ser.SER(0, DT_source, X_target, y_target, original_ser=False, no_red_on_cl=True, cl_no_red=[1], leaf_loss_quantify=True, leaf_loss_threshold=0.5) 
 ```
 
 ## Basic example
@@ -94,8 +96,8 @@ Executing basic_example.py yields:
 ![](./images/ser_strut.png)
 
 
-## More advanced examples
+<!--## More advanced examples-->
 
-path: *Transfer_DT/examples/*
+<!--path: *Transfer_DT/examples/*-->
 
-example_ser.py and example_strut.py execute several variants over real data.
+<!--example_ser.py and example_strut.py execute several variants over real data.-->
